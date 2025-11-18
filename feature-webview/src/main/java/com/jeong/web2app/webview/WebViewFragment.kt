@@ -22,7 +22,6 @@ import org.json.JSONObject
 class WebViewFragment : Fragment() {
 
     companion object {
-        const val PWA_URL = "http://example.com"
         private const val TAG = "WebViewFragment"
     }
 
@@ -56,7 +55,7 @@ class WebViewFragment : Fragment() {
 
         wv.webChromeClient = WebChromeClient()
         wv.webViewClient = WebViewClient()
-        wv.loadUrl(PWA_URL)
+        wv.loadUrl(BuildConfig.PWA_URL)
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {

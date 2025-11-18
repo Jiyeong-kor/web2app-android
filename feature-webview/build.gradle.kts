@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
@@ -16,9 +18,27 @@ android {
         consumerProguardFiles("consumer-rules.pro")
     }
 
+    buildFeatures {
+        buildConfig = true
+    }
+
     buildTypes {
+        debug {
+            val localProperties = Properties()
+            val localFile = rootProject.file("local.properties")
+            if (localFile.exists()) {
+                localProperties.load(localFile.inputStream())
+            }
+            val pwaUrl = localProperties.getProperty("pwa.url") ?: "\"http://localhost:5173\""
+
+            buildConfigField("String", "PWA_URL", pwaUrl)
+        }
+
         release {
             isMinifyEnabled = false
+            // 실제 서비스할 도메인 주소
+            buildConfigField("String", "PWA_URL", "\"https://www.your-production-domain.com\"")
+
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
