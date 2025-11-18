@@ -2,6 +2,7 @@ package com.jeong.web2app
 
 import android.content.Intent
 import android.os.Bundle
+import androidx.activity.addCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.commit
 import com.jeong.web2app.core.navigation.CameraLauncher
@@ -17,6 +18,16 @@ class MainActivity : AppCompatActivity(), CameraLauncher {
         if (savedInstanceState == null) {
             supportFragmentManager.commit {
                 replace(R.id.fragmentContainer, WebViewFragment())
+            }
+        }
+
+        onBackPressedDispatcher.addCallback(this) {
+            val currentFragment =
+                supportFragmentManager.findFragmentById(R.id.fragmentContainer) as? WebViewFragment
+
+            val handled = currentFragment?.handleOnBackPressed() ?: false
+            if (!handled) {
+                finish()
             }
         }
     }

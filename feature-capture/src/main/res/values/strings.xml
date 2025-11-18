@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="camera_permission_denied">카메라 권한이 필요합니다.</string>
+    <string name="camera_start_failed">카메라를 시작할 수 없습니다.</string>
+    <string name="capture_failed">사진을 촬영할 수 없습니다.</string>
+    <string name="ocr_failed">텍스트 인식에 실패했습니다.</string>
+</resources>
