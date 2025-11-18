@@ -16,12 +16,13 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.jeong.web2app.core.navigation.CameraLauncher
 import com.jeong.web2app.core.util.OcrResultBus
 import kotlinx.coroutines.launch
+import org.json.JSONObject
 
 @SuppressLint("SetJavaScriptEnabled")
 class WebViewFragment : Fragment() {
 
     companion object {
-        const val PWA_URL = "https://example.com"
+        const val PWA_URL = "http://192.168.0.102:5173"
         private const val TAG = "WebViewFragment"
     }
 
@@ -60,12 +61,15 @@ class WebViewFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 OcrResultBus.resultFlow.collect { json ->
-                    val script = "window.onOcrResult($json)"
+                    val escaped = JSONObject.quote(json) // JS 문자열 리터럴로 안전하게 변환
+
+                    val script = "window.onOcrResult($escaped)"
                     runCatching {
                         wv.evaluateJavascript(script, null)
                     }.onFailure { throwable ->
                         Log.w(TAG, "Failed to deliver OCR result to web view", throwable)
                     }
+                    OcrResultBus.clear()
                 }
             }
         }

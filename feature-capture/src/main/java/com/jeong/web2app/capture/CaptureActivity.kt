@@ -8,6 +8,7 @@ import android.graphics.ImageFormat
 import android.graphics.Rect
 import android.graphics.YuvImage
 import android.os.Bundle
+import android.util.Log
 import android.widget.Button
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -41,24 +42,37 @@ class CaptureActivity : AppCompatActivity() {
                 startCamera()
             } else {
                 Toast.makeText(this, R.string.camera_permission_denied, Toast.LENGTH_SHORT).show()
-                finish()
             }
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        Log.d("CaptureActivity", "onCreate started")
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_capture)
+        Log.d("CaptureActivity", "layout inflated successfully")
 
         previewView = findViewById(R.id.previewView)
         btnCapture = findViewById(R.id.btnCapture)
+
+        Log.d(
+            "CaptureActivity",
+            "CAMERA checkSelfPermission = ${
+                ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.CAMERA
+                )
+            }"
+        )
 
         if (ContextCompat.checkSelfPermission(
                 this,
                 Manifest.permission.CAMERA
             ) == PackageManager.PERMISSION_GRANTED
         ) {
+            Log.d("CaptureActivity", "Permission granted. Starting camera.")
             startCamera()
         } else {
+            Log.d("CaptureActivity", "Permission NOT granted. Launching permission request.")
             permissionLauncher.launch(Manifest.permission.CAMERA)
         }
 
@@ -73,7 +87,7 @@ class CaptureActivity : AppCompatActivity() {
             val cameraProvider = cameraProviderFuture.get()
 
             val preview = Preview.Builder().build().also {
-                it.setSurfaceProvider(previewView.surfaceProvider)
+                it.surfaceProvider = previewView.surfaceProvider
             }
 
             imageCapture = ImageCapture.Builder().build()
@@ -84,6 +98,7 @@ class CaptureActivity : AppCompatActivity() {
                 cameraProvider.unbindAll()
                 cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture)
             } catch (exc: Exception) {
+                Log.e("CaptureActivity", "startCamera failed", exc)
                 Toast.makeText(this, R.string.camera_start_failed, Toast.LENGTH_SHORT).show()
                 finish()
             }
@@ -102,12 +117,14 @@ class CaptureActivity : AppCompatActivity() {
                         R.string.capture_failed,
                         Toast.LENGTH_SHORT
                     ).show()
+                    Log.e("Camera", "Capture failed", exception)
                 }
 
                 override fun onCaptureSuccess(image: ImageProxy) {
-                    val bitmap = image.toBitmap()
+                    val bitmap = image.toBitmapCompat()
                     image.close()
                     processImage(bitmap)
+                    Log.d("Capture", "onCaptureSuccess")
                 }
             }
         )
@@ -126,7 +143,7 @@ class CaptureActivity : AppCompatActivity() {
             .addOnSuccessListener { visionText ->
                 val now = System.currentTimeMillis()
                 val json = JSONObject().apply {
-                    put("id", "req_${'$'}{System.currentTimeMillis()}")
+                    put("id", "req_${System.currentTimeMillis()}")
                     put("rawText", visionText.text)
                     put("createdAt", now.toString())
                 }.toString()
@@ -143,18 +160,44 @@ class CaptureActivity : AppCompatActivity() {
 }
 
 private fun ImageProxy.toBitmapCompat(): Bitmap? {
-    val yuvImage = YuvImage(toNv21(), ImageFormat.NV21, width, height, null)
-    val outputStream = ByteArrayOutputStream()
     return try {
-        yuvImage.compressToJpeg(Rect(0, 0, width, height), 100, outputStream)
-        val imageBytes = outputStream.toByteArray()
-        BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+        when (format) {
+            ImageFormat.JPEG -> {
+                // JPEG 포맷이면 그대로 bitmap 디코딩
+                val buffer = planes[0].buffer
+                val bytes = ByteArray(buffer.remaining())
+                buffer.get(bytes)
+                BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+            }
+
+            ImageFormat.YUV_420_888 -> {
+                // 3-plane YUV → NV21 변환
+                val nv21 = toNv21Safe()
+                val yuvImage = YuvImage(nv21, ImageFormat.NV21, width, height, null)
+                val out = ByteArrayOutputStream()
+                yuvImage.compressToJpeg(Rect(0, 0, width, height), 100, out)
+                val imageBytes = out.toByteArray()
+                BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+            }
+
+            else -> null
+        }
     } catch (_: Exception) {
         null
     }
 }
 
-private fun ImageProxy.toNv21(): ByteArray {
+
+private fun ImageProxy.toNv21Safe(): ByteArray {
+    // JPEG → plane 1개
+    if (planes.size == 1 && format == ImageFormat.JPEG) {
+        val buffer = planes[0].buffer
+        val bytes = ByteArray(buffer.remaining())
+        buffer.get(bytes)
+        return bytes
+    }
+
+    // YUV_420_888 → plane 3개
     val yBuffer = planes[0].buffer
     val uBuffer = planes[1].buffer
     val vBuffer = planes[2].buffer
@@ -171,3 +214,4 @@ private fun ImageProxy.toNv21(): ByteArray {
 
     return nv21
 }
+
