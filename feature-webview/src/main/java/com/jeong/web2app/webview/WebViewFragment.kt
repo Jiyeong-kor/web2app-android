@@ -22,7 +22,7 @@ import org.json.JSONObject
 class WebViewFragment : Fragment() {
 
     companion object {
-        const val PWA_URL = "http://192.168.0.102:5173"
+        const val PWA_URL = "http://example.com"
         private const val TAG = "WebViewFragment"
     }
 
