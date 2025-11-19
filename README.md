@@ -99,13 +99,13 @@ React **PWA(Progressive Web App)**를 **Android WebView**에 임베드하고, **
 
 ## 🛠 기술 스택
 
-| 영역 | 기술 스택 | 비고 |
-|------|-----------|------|
-| **Language** | **Kotlin 2.2.21** (JVM 21) | 최신 Android 개발 언어 |
-| **Android** | Android Application / Library (AGP **8.13.1**), AndroidX | View 기반 UI (ViewBinding) |
-| **UI** | **WebView** (React PWA 임베딩) | |
-| **Camera/ML** | **CameraX 1.5.1** (Preview/Capture), **ML Kit Text Recognition (Korean) 16.0.1** | 네이티브 핵심 기능 제공 |
-| **Architecture** | **Multi-module**, **Interface 기반 DIP**, **Event-driven (SharedFlow)** | |
+| 영역 | 기술 스택 |
+|------|-----------|
+| **Language** | **Kotlin 2.2.21** (JVM 21) |
+| **Android** | Android Application / Library (AGP **8.13.1**), AndroidX |
+| **UI** | **WebView** (React PWA 임베딩) |
+| **Camera/ML** | **CameraX 1.5.1** (Preview/Capture), **ML Kit Text Recognition (Korean) 16.0.1** |
+| **Architecture** | **Multi-module**, **Interface 기반 DIP**, **Event-driven (SharedFlow)** |
 
 ---
 
