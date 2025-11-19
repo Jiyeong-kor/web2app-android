@@ -12,7 +12,7 @@ React **PWA(Progressive Web App)**를 **Android WebView**에 임베드하고, **
 
 ### 1. 앱 실행 & PWA 로딩 (WebView)
 
-사용자가 앱을 실행하면, 스플래시 화면 직후 별도의 네이티브 화면 없이 **React PWA 웹앱이 WebView로 로드**됩니다.
+사용자가 앱을 실행하면, 앱 실행 즉시 **React PWA 웹앱이 WebView로 로드**됩니다.
 
 ![demo-startup](docs/demo-startup.gif)
 
