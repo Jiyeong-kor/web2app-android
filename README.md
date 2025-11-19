@@ -69,7 +69,8 @@ web2app-android
 ├─ app                # 엔트리 포인트, 네비게이션, DI/조율
 ├─ core               # 공통 모델, 유틸, 인터페이스 (OcrResult, OcrResultBus, CameraLauncher 등)
 ├─ feature-webview    # PWA WebView + JS 브리지(AndroidJsBridge, WebViewFragment)
-└─ feature-capture    # CameraX + ML Kit OCR (CaptureActivity)```
+└─ feature-capture    # CameraX + ML Kit OCR (CaptureActivity)
+```
 
 ### 의존성 방향
 ```text
@@ -81,7 +82,8 @@ app
 feature-webview ─▶ core
 feature-capture ─▶ core
 
-# feature ↔ feature 직접 의존 없음```
+# feature ↔ feature 직접 의존 없음
+```
 
 
 core
