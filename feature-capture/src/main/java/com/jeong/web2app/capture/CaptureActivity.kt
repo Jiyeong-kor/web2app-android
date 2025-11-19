@@ -7,6 +7,7 @@ import android.graphics.BitmapFactory
 import android.graphics.ImageFormat
 import android.graphics.Rect
 import android.graphics.YuvImage
+import android.icu.text.SimpleDateFormat
 import android.os.Bundle
 import android.util.Log
 import android.widget.Button
@@ -28,8 +29,8 @@ import com.google.mlkit.vision.text.korean.KoreanTextRecognizerOptions
 import com.jeong.web2app.core.ocr.OcrResult
 import com.jeong.web2app.core.util.OcrResultBus
 import kotlinx.coroutines.launch
-import org.json.JSONObject
 import java.io.ByteArrayOutputStream
+import java.util.Locale
 
 class CaptureActivity : AppCompatActivity() {
 
@@ -160,21 +161,30 @@ class CaptureActivity : AppCompatActivity() {
             .addOnSuccessListener { visionText ->
                 Log.d("CaptureActivity", "OCR success: ${visionText.text}")
 
-                val result = OcrResult(
-                    id = "req_${System.currentTimeMillis()}",
-                    rawText = visionText.text,
-                    createdAt = System.currentTimeMillis().toString()
-                )
+                // 줄 개행 정리
+                val rawText = visionText.textBlocks.joinToString("\n\n") { block ->
+                    block.lines.joinToString("\n") { line ->
+                        line.text
+                    }
+                }
 
-                val resultJson = JSONObject().apply {
-                    put("id", result.id)
-                    put("rawText", result.rawText)
-                    put("createdAt", result.createdAt)
-                }.toString()
+                // 시간 포맷
+                val now = System.currentTimeMillis()
+                val formattedTime = SimpleDateFormat(
+                    "yyyy-MM-dd HH:mm:ss",
+                    Locale.getDefault()
+                ).format(now)
+
+                // 도메인 모델
+                val result = OcrResult(
+                    id = "req_$now",
+                    rawText = rawText,
+                    createdAt = formattedTime,
+                )
 
                 lifecycleScope.launch {
                     Log.d("CaptureActivity", "Posting OCR result to bus")
-                    OcrResultBus.post(resultJson)
+                    OcrResultBus.post(result)
                     Log.d("CaptureActivity", "Calling finish()")
                     finish()
                 }
