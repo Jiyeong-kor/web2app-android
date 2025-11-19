@@ -1,8 +1,7 @@
 # web2app-android (React PWA → Android WebApp)
 
 React 기반 웹 앱(PWA)에 네이티브 카메라 OCR(광학 문자 인식) 기능을 연동하기 위해 개발된 Android 하이브리드 앱입니다.
-WebView 내에서 웹 콘텐츠는 JavaScript Bridge를 통해 네이티브 카메라 기능을 호출하며,
-촬영된 이미지에서 인식된 한국어 텍스트 결과는 비동기적으로 다시 웹뷰로 전달됩니다.
+WebView 내에서 웹 콘텐츠는 JavaScript Bridge를 통해 네이티브 카메라 기능을 호출하며, 촬영된 이미지에서 인식된 한국어 텍스트 결과는 비동기적으로 다시 웹뷰로 전달됩니다.
 기존 웹 서비스를 최대한 재사용하면서 카메라·OCR 같은 네이티브 기능을 점진적으로 통합하는 데모 프로젝트입니다.
 
 ---
@@ -86,31 +85,57 @@ feature-capture ─▶ core
 ```
 
 
-core
+## 🏗 아키텍처 모듈 설명 (표)
 
-OcrResult: OCR 결과 도메인 모델
+### 모듈별 역할 요약
 
-OcrResultBus: SharedFlow<String> 기반 이벤트 버스 (네이티브 → 웹)
+| 모듈 | 핵심 책임 | 포함 파일 / 구성요소 | 외부 의존성 | 비고 |
+|------|-----------|------------------------|---------------|-------|
+| **core** | 공통 모델, 유틸, 추상화 인터페이스 | `OcrResult`, `OcrResultBus`, `CameraLauncher` | 없음 (Android Framework/CameraX/WebView에 의존 금지) | feature와 app의 공유 기반. DIP 준수 핵심 |
+| **app** | 네비게이션 조율, Host Activity, BuildConfig(PWA_URL) 생성 | `MainActivity` (CameraLauncher 구현), DI(간단한 연결) | feature-webview, feature-capture, core | 앱 전체의 orchestration 담당 |
+| **feature-webview** | PWA WebView 로딩, JS ↔ Android 브리지 | `WebViewFragment`, `AndroidJsBridge` | core | WebView에서 JS 기능 확장 담당 |
+| **feature-capture** | CameraX 촬영 + ML Kit OCR 처리 | `CaptureActivity` | core, CameraX, ML Kit | 결과를 JSON으로 만들어 core로 전달 |
 
-CameraLauncher: fun launchCamera() 인터페이스로 카메라 호출 추상화
+---
 
-app
+### core 모듈 상세
 
-MainActivity 가 CameraLauncher 구현
+| 구성 요소 | 역할 | 비고 |
+|-----------|------|-------|
+| **OcrResult** | OCR 결과를 표현하는 모델 데이터 클래스 | 네이티브→웹 데이터를 JSON으로 만드는 기반 |
+| **OcrResultBus** | `SharedFlow<String>` 기반 이벤트 버스 | 네이티브 OCR 결과를 WebViewFragment에 전달 |
+| **CameraLauncher** | `fun launchCamera()` 단일 인터페이스 | WebViewFragment가 Activity를 직접 참조하지 않도록 분리된 추상화 |
 
-WebViewFragment 호스팅 및 CaptureActivity로 전환 책임
+---
 
-feature-webview
+### app 모듈 상세
 
-WebViewFragment: PWA URL 로딩 + JS 브리지 등록 + OcrResultBus 구독
+| 구성 요소 | 역할 | 비고 |
+|-----------|------|-------|
+| **MainActivity** | CameraLauncher 구현, PWA WebViewFragment attach, 뒤로가기 처리 | 네비게이션 흐름의 중심 |
+| **BuildConfig.PWA_URL** | `local.properties`에서 `pwa.url` 읽어 주입 | 환경별 PWA URL 분리 가능 |
 
-AndroidJsBridge: @JavascriptInterface fun startCamera() → CameraLauncher.launchCamera()
+---
 
-feature-capture
+### feature-webview 모듈 상세
 
-CaptureActivity: CameraX 프리뷰/캡처 + ML Kit OCR + OcrResultBus.post(json)
+| 구성 요소 | 역할 | 비고 |
+|-----------|------|-------|
+| **WebViewFragment** | PWA 로딩, 브리지 등록, OcrResultBus collect → JS 호출 | 실질적으로 “웹앱을 네이티브 앱처럼 보이게 하는 핵심” |
+| **AndroidJsBridge** | 웹에서 `window.Android.startCamera()` → CameraLauncher 호출 | JS ↔ Android 다리 역할 |
 
-🔁 PWA ↔ 네이티브 연동 흐름
+---
+
+### feature-capture 모듈 상세
+
+| 구성 요소 | 역할 | 비고 |
+|-----------|------|-------|
+| **CaptureActivity** | CameraX 프리뷰/촬영, ML Kit OCR, JSON 생성, OcrResultBus.post | 네이티브 기능(카메라 + OCR) 담당 |
+| **CameraX / ML Kit dependency** | 카메라 + OCR 기능 제공 | core에서는 사용하지 않음 (DIP 준수) |
+
+---
+
+###🔁 PWA ↔ 네이티브 연동 흐름
 
 앱 실행
 
