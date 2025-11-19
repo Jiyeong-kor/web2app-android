@@ -28,6 +28,7 @@ import com.google.mlkit.vision.text.korean.KoreanTextRecognizerOptions
 import com.jeong.web2app.core.ocr.OcrResult
 import com.jeong.web2app.core.util.OcrResultBus
 import kotlinx.coroutines.launch
+import org.json.JSONObject
 import java.io.ByteArrayOutputStream
 
 class CaptureActivity : AppCompatActivity() {
@@ -37,11 +38,14 @@ class CaptureActivity : AppCompatActivity() {
     private var imageCapture: ImageCapture? = null
 
     private val permissionLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        registerForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) { granted ->
             if (granted) {
                 startCamera()
             } else {
-                Toast.makeText(this, R.string.camera_permission_denied, Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, R.string.camera_permission_denied, Toast.LENGTH_SHORT)
+                    .show()
             }
         }
 
@@ -72,7 +76,9 @@ class CaptureActivity : AppCompatActivity() {
             Log.d("CaptureActivity", "Permission granted. Starting camera.")
             startCamera()
         } else {
-            Log.d("CaptureActivity", "Permission NOT granted. Launching permission request.")
+            Log.d(
+                "CaptureActivity", "Permission NOT granted. Launching permission request."
+            )
             permissionLauncher.launch(Manifest.permission.CAMERA)
         }
 
@@ -99,10 +105,14 @@ class CaptureActivity : AppCompatActivity() {
 
             try {
                 cameraProvider.unbindAll()
-                cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture)
+                cameraProvider.bindToLifecycle(
+                    this, cameraSelector, preview, imageCapture
+                )
             } catch (exc: Exception) {
                 Log.e("CaptureActivity", "startCamera failed", exc)
-                Toast.makeText(this, R.string.camera_start_failed, Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    this, R.string.camera_start_failed, Toast.LENGTH_SHORT
+                ).show()
                 finish()
             }
         }, ContextCompat.getMainExecutor(this))
@@ -135,13 +145,16 @@ class CaptureActivity : AppCompatActivity() {
 
     private fun processImage(bitmap: Bitmap?) {
         if (bitmap == null) {
-            Toast.makeText(this, R.string.capture_failed, Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                this, R.string.capture_failed, Toast.LENGTH_SHORT
+            ).show()
             finish()
             return
         }
 
         val inputImage = InputImage.fromBitmap(bitmap, 0)
-        val recognizer = TextRecognition.getClient(KoreanTextRecognizerOptions.Builder().build())
+        val recognizer = TextRecognition
+            .getClient(KoreanTextRecognizerOptions.Builder().build())
 
         recognizer.process(inputImage)
             .addOnSuccessListener { visionText ->
@@ -153,16 +166,24 @@ class CaptureActivity : AppCompatActivity() {
                     createdAt = System.currentTimeMillis().toString()
                 )
 
+                val resultJson = JSONObject().apply {
+                    put("id", result.id)
+                    put("rawText", result.rawText)
+                    put("createdAt", result.createdAt)
+                }.toString()
+
                 lifecycleScope.launch {
                     Log.d("CaptureActivity", "Posting OCR result to bus")
-                    OcrResultBus.post(result)
+                    OcrResultBus.post(resultJson)
                     Log.d("CaptureActivity", "Calling finish()")
                     finish()
                 }
             }
             .addOnFailureListener { e ->
                 Log.e("CaptureActivity", "OCR failed", e)
-                Toast.makeText(this, R.string.ocr_failed, Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    this, R.string.ocr_failed, Toast.LENGTH_SHORT
+                ).show()
                 finish()
             }
     }
@@ -182,9 +203,15 @@ private fun ImageProxy.toBitmapCompat(): Bitmap? {
             ImageFormat.YUV_420_888 -> {
                 // 3-plane YUV → NV21 변환
                 val nv21 = toNv21Safe()
-                val yuvImage = YuvImage(nv21, ImageFormat.NV21, width, height, null)
+                val yuvImage = YuvImage(
+                    nv21, ImageFormat.NV21, width, height, null
+                )
                 val out = ByteArrayOutputStream()
-                yuvImage.compressToJpeg(Rect(0, 0, width, height), 100, out)
+                yuvImage.compressToJpeg(
+                    Rect(
+                        0, 0, width, height
+                    ), 100, out
+                )
                 val imageBytes = out.toByteArray()
                 BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
             }
@@ -223,4 +250,3 @@ private fun ImageProxy.toNv21Safe(): ByteArray {
 
     return nv21
 }
-

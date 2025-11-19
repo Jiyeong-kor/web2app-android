@@ -23,11 +23,13 @@ class MainActivity : AppCompatActivity(), CameraLauncher {
 
         onBackPressedDispatcher.addCallback(this) {
             val currentFragment =
-                supportFragmentManager.findFragmentById(R.id.fragmentContainer) as? WebViewFragment
+                supportFragmentManager
+                    .findFragmentById(R.id.fragmentContainer) as? WebViewFragment
 
             val handled = currentFragment?.handleOnBackPressed() ?: false
             if (!handled) {
-                finish()
+                isEnabled = false
+                onBackPressedDispatcher.onBackPressed()
             }
         }
     }

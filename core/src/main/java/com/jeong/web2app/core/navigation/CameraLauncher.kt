@@ -1,5 +1,5 @@
 package com.jeong.web2app.core.navigation
 
-interface CameraLauncher {
+fun interface CameraLauncher {
     fun launchCamera()
 }

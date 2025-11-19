@@ -16,7 +16,6 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.jeong.web2app.core.navigation.CameraLauncher
 import com.jeong.web2app.core.util.OcrResultBus
 import kotlinx.coroutines.launch
-import org.json.JSONObject
 
 @SuppressLint("SetJavaScriptEnabled")
 class WebViewFragment : Fragment() {
@@ -32,7 +31,9 @@ class WebViewFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        val view = inflater.inflate(R.layout.fragment_webview, container, false)
+        val view = inflater.inflate(
+            R.layout.fragment_webview, container, false
+        )
         webView = view.findViewById(R.id.webView)
         return view
     }
@@ -59,13 +60,7 @@ class WebViewFragment : Fragment() {
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                OcrResultBus.resultFlow.collect { result ->
-                    val resultJson = JSONObject().apply {
-                        put("id", result.id)
-                        put("rawText", result.rawText)
-                        put("createdAt", result.createdAt)
-                    }.toString()
-
+                OcrResultBus.resultFlow.collect { resultJson ->
                     Log.d(TAG, "OCR result collected from bus: $resultJson")
 
                     val script = "window.onOcrResult($resultJson)"
