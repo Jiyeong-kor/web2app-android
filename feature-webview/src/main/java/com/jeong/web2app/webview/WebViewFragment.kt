@@ -59,16 +59,25 @@ class WebViewFragment : Fragment() {
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                OcrResultBus.resultFlow.collect { json ->
-                    val escaped = JSONObject.quote(json) // JS 문자열 리터럴로 안전하게 변환
+                OcrResultBus.resultFlow.collect { result ->
+                    val resultJson = JSONObject().apply {
+                        put("id", result.id)
+                        put("rawText", result.rawText)
+                        put("createdAt", result.createdAt)
+                    }.toString()
 
-                    val script = "window.onOcrResult($escaped)"
+                    Log.d(TAG, "OCR result collected from bus: $resultJson")
+
+                    val script = "window.onOcrResult($resultJson)"
+                    Log.d(TAG, "Evaluating JS: $script")
+
                     runCatching {
                         wv.evaluateJavascript(script, null)
                     }.onFailure { throwable ->
                         Log.w(TAG, "Failed to deliver OCR result to web view", throwable)
                     }
                     OcrResultBus.clear()
+                    Log.d(TAG, "OcrResultBus replay cache cleared")
                 }
             }
         }

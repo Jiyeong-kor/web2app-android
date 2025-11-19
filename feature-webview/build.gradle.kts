@@ -29,8 +29,8 @@ android {
             if (localFile.exists()) {
                 localProperties.load(localFile.inputStream())
             }
-            val pwaUrl = localProperties.getProperty("pwa.url") ?: "\"http://localhost:5173\""
-
+            val rawUrl = localProperties.getProperty("pwa.url")
+            val pwaUrl = "\"$rawUrl\""
             buildConfigField("String", "PWA_URL", pwaUrl)
         }
 

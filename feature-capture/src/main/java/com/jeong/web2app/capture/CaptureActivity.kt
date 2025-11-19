@@ -25,9 +25,9 @@ import androidx.lifecycle.lifecycleScope
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.korean.KoreanTextRecognizerOptions
+import com.jeong.web2app.core.ocr.OcrResult
 import com.jeong.web2app.core.util.OcrResultBus
 import kotlinx.coroutines.launch
-import org.json.JSONObject
 import java.io.ByteArrayOutputStream
 
 class CaptureActivity : AppCompatActivity() {
@@ -90,7 +90,10 @@ class CaptureActivity : AppCompatActivity() {
                 it.surfaceProvider = previewView.surfaceProvider
             }
 
-            imageCapture = ImageCapture.Builder().build()
+            imageCapture = ImageCapture.Builder()
+                .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
+                .setTargetRotation(previewView.display.rotation)
+                .build()
 
             val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
@@ -133,6 +136,7 @@ class CaptureActivity : AppCompatActivity() {
     private fun processImage(bitmap: Bitmap?) {
         if (bitmap == null) {
             Toast.makeText(this, R.string.capture_failed, Toast.LENGTH_SHORT).show()
+            finish()
             return
         }
 
@@ -141,20 +145,25 @@ class CaptureActivity : AppCompatActivity() {
 
         recognizer.process(inputImage)
             .addOnSuccessListener { visionText ->
-                val now = System.currentTimeMillis()
-                val json = JSONObject().apply {
-                    put("id", "req_${System.currentTimeMillis()}")
-                    put("rawText", visionText.text)
-                    put("createdAt", now.toString())
-                }.toString()
+                Log.d("CaptureActivity", "OCR success: ${visionText.text}")
+
+                val result = OcrResult(
+                    id = "req_${System.currentTimeMillis()}",
+                    rawText = visionText.text,
+                    createdAt = System.currentTimeMillis().toString()
+                )
 
                 lifecycleScope.launch {
-                    OcrResultBus.post(json)
+                    Log.d("CaptureActivity", "Posting OCR result to bus")
+                    OcrResultBus.post(result)
+                    Log.d("CaptureActivity", "Calling finish()")
                     finish()
                 }
             }
-            .addOnFailureListener {
+            .addOnFailureListener { e ->
+                Log.e("CaptureActivity", "OCR failed", e)
                 Toast.makeText(this, R.string.ocr_failed, Toast.LENGTH_SHORT).show()
+                finish()
             }
     }
 }
