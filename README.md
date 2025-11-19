@@ -45,6 +45,7 @@ React **PWA(Progressive Web App)**를 **Android WebView**에 임베드하고, **
 * **네이티브 기능:**
     * **카메라:** `CameraX` 기반 실시간 프리뷰 및 캡처.
     * **OCR:** `ML Kit Text Recognition (Korean)` 사용.
+    * **이미지 포맷 처리:** `CameraX`에서 캡처되는 다양한 포맷(JPEG, YUV)을 안정적으로 처리하고 ML Kit이 요구하는 `Bitmap`으로 변환하는 로직 포함.
 * **멀티 모듈 아키텍처:**
     * `:app`, `:core`, `:feature-webview`, `:feature-capture` 모듈 분리.
     * `core`를 통한 **인터페이스 기반의 느슨한 결합** (의존성 역전 원칙/DIP).
@@ -69,7 +70,7 @@ React **PWA(Progressive Web App)**를 **Android WebView**에 임베드하고, **
 | 구성 요소 | 역할 | 비고 |
 |-----------|------|-------|
 | **`OcrResult`** | OCR 결과를 표현하는 데이터 모델 | 네이티브 $\rightarrow$ 웹 JSON 변환의 기반 |
-| **`OcrResultBus`** | `SharedFlow<String>` 기반 이벤트 버스 | 네이티브 OCR 결과를 `WebViewFragment`로 비동기 전달 |
+| **`OcrResultBus`** | **`SharedFlow<OcrResult>`** 기반 이벤트 버스 | 네이티브 OCR 결과를 `WebViewFragment`로 비동기 전달 (Fragment 내부에서 JSON으로 직렬화) |
 | **`CameraLauncher`** | `fun launchCamera()` 단일 인터페이스 | `feature-webview`가 **Host Activity**(`MainActivity`)를 직접 참조하지 않도록 추상화 |
 
 ---
@@ -88,9 +89,9 @@ React **PWA(Progressive Web App)**를 **Android WebView**에 임베드하고, **
 ### 2. 네이티브 $\rightarrow$ 웹 (OCR 결과 전달)
 
 1.  **`feature-capture`:** `CaptureActivity`에서 CameraX 촬영 및 ML Kit OCR 처리.
-2.  **`feature-capture`:** 결과를 `OcrResult` 모델로 변환 후 JSON 문자열을 생성.
-3.  **`core`:** `OcrResultBus.post(json)`를 호출하여 결과 전송.
-4.  **`feature-webview`:** `WebViewFragment`가 `OcrResultBus.resultFlow`를 구독하고 있다가 새 JSON 문자열을 수신.
+2.  **`feature-capture`:** 결과를 `OcrResult` 모델로 변환.
+3.  **`core`:** `OcrResultBus.post(result)`를 호출하여 **`OcrResult` 객체 전송**.
+4.  **`feature-webview`:** `WebViewFragment`가 `OcrResultBus.resultFlow`를 구독하고 있다가 **`OcrResult` 객체를 수신하고, JSON 문자열로 직렬화**.
 5.  **`feature-webview`:** `webView.evaluateJavascript("window.onOcrResult(${json});", null)`을 호출하여 결과를 웹뷰 JS 환경으로 전달.
 6.  **웹 (React PWA):** `window.onOcrResult(json)` 함수를 받아 웹 UI 업데이트.
 
@@ -100,10 +101,10 @@ React **PWA(Progressive Web App)**를 **Android WebView**에 임베드하고, **
 
 | 영역 | 기술 스택 | 비고 |
 |------|-----------|------|
-| **Language** | **Kotlin** (JVM, Kotlin 2.x) | 최신 Android 개발 언어 |
-| **Android** | Android Application / Library (AGP 8.x), AndroidX | View 기반 UI (ViewBinding) |
+| **Language** | **Kotlin 2.2.21** (JVM 21) | 최신 Android 개발 언어 |
+| **Android** | Android Application / Library (AGP **8.13.1**), AndroidX | View 기반 UI (ViewBinding) |
 | **UI** | **WebView** (React PWA 임베딩) | |
-| **Camera/ML** | **CameraX** (Preview/Capture), **ML Kit Text Recognition (Korean)** | 네이티브 핵심 기능 제공 |
+| **Camera/ML** | **CameraX 1.5.1** (Preview/Capture), **ML Kit Text Recognition (Korean) 16.0.1** | 네이티브 핵심 기능 제공 |
 | **Architecture** | **Multi-module**, **Interface 기반 DIP**, **Event-driven (SharedFlow)** | |
 
 ---
