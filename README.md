@@ -1,6 +1,6 @@
 ## 🌟 web2app-android (React PWA ↔ Android 하이브리드)
 
-* **개발 기간** 2025-11-18 ~ 2025-11-19 (2일)
+* **개발 기간**: 2025-11-18 ~ 2025-11-19 (2일)
 
 React **PWA(Progressive Web App)**를 **Android WebView**에 임베드하고, **JavaScript Bridge**를 통해 네이티브 **카메라 OCR(광학 문자 인식)** 기능을 연동하는 하이브리드 앱 데모 프로젝트입니다.
 
